@@ -66,6 +66,10 @@ yarn-error.log
 # testing
 /coverage
 
+# Bundler / local tooling
+.bundle/
+scratch/
+
 # Yarn
 .yarn/*
 !.yarn/patches

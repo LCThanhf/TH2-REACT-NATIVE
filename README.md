@@ -1,5 +1,34 @@
 This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
 
+# UDU Chat
+
+Ứng dụng chat 1-1 dùng React Native CLI (không dùng Expo), React Navigation,
+Firebase Authentication và Firebase Realtime Database.
+
+> **Quan trọng:** cần tạo project Firebase và tạo file cấu hình local
+> `src/services/firebaseConfig.ts` (copy từ
+> `src/services/firebaseConfig.example.ts`) trước khi chạy. File cấu hình thật
+> đã nằm trong `.gitignore` nên không bao giờ bị commit. Xem hướng dẫn chi tiết
+> tại [FIREBASE_SETUP.md](./FIREBASE_SETUP.md).
+
+Các thay đổi chính so với bản dữ liệu mẫu:
+
+- Đăng ký / đăng nhập / đăng xuất bằng Firebase Authentication (Email/Password).
+- Danh bạ lấy từ Realtime Database, cập nhật trạng thái online/offline realtime.
+- Chat 1-1 realtime, có gửi vị trí (`@react-native-community/geolocation`).
+- Danh sách hội thoại + số tin chưa đọc realtime.
+- Màn hình Thông báo giữ nguyên dữ liệu mẫu của project cũ.
+
+Mã nguồn chính:
+
+```text
+src/services/     # toàn bộ code Firebase (auth, database, presence, chat)
+src/screens/      # Login, Register, Home, Contacts, ChatDetail, Settings, Notifications
+src/context/      # AppContext quản lý auth + dữ liệu realtime
+src/utils/        # định dạng thời gian, xin quyền & lấy vị trí
+```
+
+
 # Getting Started
 
 > **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.

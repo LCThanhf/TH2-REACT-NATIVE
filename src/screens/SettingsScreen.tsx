@@ -36,11 +36,19 @@ export const SettingsScreen: React.FC = () => {
         {
           text: 'Đăng xuất',
           style: 'destructive',
-          onPress: logout,
+          onPress: () => {
+            logout().catch(() => {
+              Alert.alert('Lỗi', 'Không thể đăng xuất. Vui lòng thử lại.');
+            });
+          },
         },
       ]
     );
   };
+
+  if (!currentUser) {
+    return null;
+  }
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
@@ -63,7 +71,9 @@ export const SettingsScreen: React.FC = () => {
           <View style={styles.profileInfo}>
             <Text style={styles.profileName}>{currentUser.name}</Text>
             <Text style={styles.profileEmail}>{currentUser.email}</Text>
-            <Text style={styles.profilePhone}>{currentUser.phone}</Text>
+            {currentUser.phone ? (
+              <Text style={styles.profilePhone}>{currentUser.phone}</Text>
+            ) : null}
           </View>
         </View>
 

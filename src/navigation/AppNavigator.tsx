@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, View, Text, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -9,6 +9,7 @@ import { useApp } from '../context/AppContext';
 import { RootStackParamList, MainTabParamList } from '../types';
 
 import { LoginScreen } from '../screens/LoginScreen';
+import { RegisterScreen } from '../screens/RegisterScreen';
 import { HomeScreen } from '../screens/HomeScreen';
 import { ContactsScreen } from '../screens/ContactsScreen';
 import { NotificationsScreen } from '../screens/NotificationsScreen';
@@ -99,17 +100,36 @@ const MainTabNavigator = () => {
 };
 
 export const AppNavigator: React.FC = () => {
-  const { isLoggedIn } = useApp();
+  const { isLoggedIn, initializing } = useApp();
+
+  if (initializing) {
+    return (
+      <View style={styles.loadingContainer}>
+        <View style={styles.loadingLogo}>
+          <Text style={styles.loadingLogoText}>UDU</Text>
+        </View>
+        <Text style={styles.loadingTitle}>UDU Chat</Text>
+        <ActivityIndicator size="small" color="#0084ff" />
+      </View>
+    );
+  }
 
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {!isLoggedIn ? (
-          <Stack.Screen
-            name="Login"
-            component={LoginScreen}
-            options={{ animation: 'fade' }}
-          />
+          <>
+            <Stack.Screen
+              name="Login"
+              component={LoginScreen}
+              options={{ animation: 'fade' }}
+            />
+            <Stack.Screen
+              name="Register"
+              component={RegisterScreen}
+              options={{ animation: 'slide_from_right' }}
+            />
+          </>
         ) : (
           <>
             <Stack.Screen
@@ -130,6 +150,33 @@ export const AppNavigator: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#f8fafc',
+    gap: 12,
+  },
+  loadingLogo: {
+    width: 60,
+    height: 60,
+    borderRadius: 18,
+    backgroundColor: '#0084ff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingLogoText: {
+    color: '#ffffff',
+    fontSize: 20,
+    fontWeight: '800',
+    letterSpacing: 1,
+  },
+  loadingTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#0f172a',
+    marginBottom: 4,
+  },
   tabBar: {
     backgroundColor: '#ffffff',
     borderTopWidth: 1,

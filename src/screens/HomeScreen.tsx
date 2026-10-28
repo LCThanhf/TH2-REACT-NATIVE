@@ -14,6 +14,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useApp } from '../context/AppContext';
 import { UserAvatar } from '../components/UserAvatar';
 import { Conversation, RootStackParamList } from '../types';
+import { formatConversationTime } from '../utils/format';
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -22,20 +23,23 @@ export const HomeScreen: React.FC = () => {
   const { conversations, markConversationAsRead } = useApp();
   const [searchQuery, setSearchQuery] = useState<string>('');
 
-  // Filter conversations by user name or last message
+  // Lọc hội thoại theo tên người dùng hoặc tin nhắn cuối
   const filteredConversations = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
     if (!query) return conversations;
     return conversations.filter(
       (conv) =>
         conv.user.name.toLowerCase().includes(query) ||
-        conv.lastMessage.toLowerCase().includes(query)
+        conv.lastMessage.toLowerCase().includes(query),
     );
   }, [conversations, searchQuery]);
 
-  const handleOpenChat = (conversationId: string) => {
-    markConversationAsRead(conversationId);
-    navigation.navigate('ChatDetail', { conversationId });
+  const handleOpenChat = (conversation: Conversation) => {
+    markConversationAsRead(conversation.id);
+    navigation.navigate('ChatDetail', {
+      conversationId: conversation.id,
+      userId: conversation.user.id,
+    });
   };
 
   const renderConversationItem = ({ item }: { item: Conversation }) => {
@@ -45,7 +49,7 @@ export const HomeScreen: React.FC = () => {
       <TouchableOpacity
         style={[styles.chatItem, isUnread && styles.chatItemUnread]}
         activeOpacity={0.7}
-        onPress={() => handleOpenChat(item.id)}
+        onPress={() => handleOpenChat(item)}
       >
         {/* Avatar Container with Online Indicator */}
         <View style={styles.avatarContainer}>
@@ -56,11 +60,14 @@ export const HomeScreen: React.FC = () => {
         {/* Content Column */}
         <View style={styles.chatContent}>
           <View style={styles.chatHeaderRow}>
-            <Text style={[styles.userName, isUnread && styles.userNameUnread]} numberOfLines={1}>
+            <Text
+              style={[styles.userName, isUnread && styles.userNameUnread]}
+              numberOfLines={1}
+            >
               {item.user.name}
             </Text>
             <Text style={[styles.timeText, isUnread && styles.timeTextUnread]}>
-              {item.lastMessageTime}
+              {formatConversationTime(item.lastMessageAt)}
             </Text>
           </View>
 
@@ -87,7 +94,7 @@ export const HomeScreen: React.FC = () => {
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       <StatusBar barStyle="dark-content" />
-      
+
       {/* Top Header */}
       <View style={styles.header}>
         <View>
@@ -132,7 +139,7 @@ export const HomeScreen: React.FC = () => {
             <Text style={styles.emptySub}>
               {searchQuery
                 ? `Không có kết quả nào phù hợp với "${searchQuery}"`
-                : 'Chưa có cuộc trò chuyện nào.'}
+                : 'Chưa có cuộc trò chuyện nào. Hãy vào Danh bạ để nhắn tin.'}
             </Text>
           </View>
         }
@@ -195,6 +202,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingBottom: 20,
+    flexGrow: 1,
   },
   chatItem: {
     flexDirection: 'row',
@@ -281,6 +289,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   emptyContainer: {
+    flex: 1,
     padding: 40,
     alignItems: 'center',
     justifyContent: 'center',

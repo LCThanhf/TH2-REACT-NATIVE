@@ -14,16 +14,18 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useApp } from '../context/AppContext';
 import { UserAvatar } from '../components/UserAvatar';
 import { User, RootStackParamList } from '../types';
+import { buildChatId } from '../services/chatService';
+import { formatLastSeen } from '../utils/format';
 
 type ContactsNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export const ContactsScreen: React.FC = () => {
   const navigation = useNavigation<ContactsNavigationProp>();
-  const { contacts, startOrGetConversation } = useApp();
+  const { contacts, currentUser } = useApp();
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [filterType, setFilterType] = useState<'all' | 'online'>('all');
 
-  // Filter contacts by search query & online status filter
+  // Lọc danh bạ theo từ khóa & trạng thái online
   const filteredContacts = useMemo(() => {
     let result = contacts;
     const query = searchQuery.trim().toLowerCase();
@@ -32,8 +34,8 @@ export const ContactsScreen: React.FC = () => {
       result = result.filter(
         (user) =>
           user.name.toLowerCase().includes(query) ||
-          user.phone.toLowerCase().includes(query) ||
-          user.email.toLowerCase().includes(query)
+          (user.phone || '').toLowerCase().includes(query) ||
+          user.email.toLowerCase().includes(query),
       );
     }
 
@@ -44,11 +46,15 @@ export const ContactsScreen: React.FC = () => {
     return result;
   }, [contacts, searchQuery, filterType]);
 
-  const handleContactPress = (userId: string) => {
-    const conversationId = startOrGetConversation(userId);
-    if (conversationId) {
-      navigation.navigate('ChatDetail', { conversationId });
+  const handleContactPress = (user: User) => {
+    if (!currentUser) {
+      return;
     }
+
+    navigation.navigate('ChatDetail', {
+      conversationId: buildChatId(currentUser.id, user.id),
+      userId: user.id,
+    });
   };
 
   const renderContactItem = ({ item }: { item: User }) => {
@@ -58,7 +64,7 @@ export const ContactsScreen: React.FC = () => {
       <TouchableOpacity
         style={styles.contactItem}
         activeOpacity={0.7}
-        onPress={() => handleContactPress(item.id)}
+        onPress={() => handleContactPress(item)}
       >
         {/* Avatar with Online Status Dot */}
         <View style={styles.avatarContainer}>
@@ -76,8 +82,8 @@ export const ContactsScreen: React.FC = () => {
           <Text style={styles.userName} numberOfLines={1}>
             {item.name}
           </Text>
-          <Text style={styles.userPhone} numberOfLines={1}>
-            {item.phone}
+          <Text style={styles.userEmail} numberOfLines={1}>
+            {item.phone || item.email || 'Chưa có thông tin'}
           </Text>
           <View style={styles.statusBadgeRow}>
             <View
@@ -94,9 +100,7 @@ export const ContactsScreen: React.FC = () => {
             >
               {isOnline
                 ? 'Đang trực tuyến'
-                : item.lastSeen
-                ? `Hoạt động ${item.lastSeen}`
-                : 'Ngoại tuyến'}
+                : `Hoạt động ${formatLastSeen(item.lastSeen)}`}
             </Text>
           </View>
         </View>
@@ -111,7 +115,7 @@ export const ContactsScreen: React.FC = () => {
 
   const onlineCount = useMemo(
     () => contacts.filter((c) => c.status === 'online').length,
-    [contacts]
+    [contacts],
   );
 
   return (
@@ -132,7 +136,7 @@ export const ContactsScreen: React.FC = () => {
       <View style={styles.searchContainer}>
         <TextInput
           style={styles.searchInput}
-          placeholder="Tìm theo tên hoặc số điện thoại..."
+          placeholder="Tìm theo tên, email hoặc số điện thoại..."
           placeholderTextColor="#94a3b8"
           value={searchQuery}
           onChangeText={setSearchQuery}
@@ -199,7 +203,7 @@ export const ContactsScreen: React.FC = () => {
             <Text style={styles.emptySub}>
               {searchQuery
                 ? `Không có người dùng nào khớp với "${searchQuery}"`
-                : 'Chưa có người dùng nào trong danh bạ.'}
+                : 'Chưa có người dùng nào đăng ký ngoài bạn.'}
             </Text>
           </View>
         }
@@ -287,6 +291,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingBottom: 20,
+    flexGrow: 1,
   },
   contactItem: {
     flexDirection: 'row',
@@ -326,7 +331,7 @@ const styles = StyleSheet.create({
     color: '#1e293b',
     marginBottom: 2,
   },
-  userPhone: {
+  userEmail: {
     fontSize: 12.5,
     color: '#64748b',
     marginBottom: 4,
@@ -371,6 +376,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   emptyContainer: {
+    flex: 1,
     padding: 40,
     alignItems: 'center',
     justifyContent: 'center',

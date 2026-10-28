@@ -70,8 +70,18 @@ yarn-error.log
 .bundle/
 scratch/
 
+# Local secrets / environment
+# Cấu hình Firebase thật chỉ nằm trên máy dev, không commit.
+# File mẫu để commit là src/services/firebaseConfig.example.ts
+src/services/firebaseConfig.ts
+.env
+.env.*
+!.env.example
+google-services.json
+GoogleService-Info.plist
+*-firebase-adminsdk-*.json
+
 # Yarn
-.yarn/*
 !.yarn/patches
 !.yarn/plugins
 !.yarn/releases

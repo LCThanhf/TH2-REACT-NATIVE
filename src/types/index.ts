@@ -2,28 +2,37 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  phone: string;
+  phone?: string;
   status: 'online' | 'offline';
-  lastSeen?: string;
+  /** Thời điểm hoạt động gần nhất (Unix ms) */
+  lastSeen?: number;
   bio?: string;
 }
 
+export type MessageType = 'text' | 'location';
+
 export interface Message {
   id: string;
-  conversationId: string;
   senderId: string;
+  type: MessageType;
   text: string;
-  timestamp: string;
+  latitude?: number;
+  longitude?: number;
+  /** Unix ms - lấy từ server timestamp của Firebase */
+  createdAt: number;
   isMine: boolean;
 }
 
 export interface Conversation {
+  /** Chính là chatId trên Realtime Database */
   id: string;
+  /** Người còn lại trong cuộc trò chuyện */
   user: User;
   lastMessage: string;
-  lastMessageTime: string;
+  lastMessageType: MessageType;
+  /** Unix ms */
+  lastMessageAt: number | null;
   unreadCount: number;
-  messages: Message[];
 }
 
 export interface NotificationItem {
@@ -37,8 +46,14 @@ export interface NotificationItem {
 
 export type RootStackParamList = {
   Login: undefined;
+  Register: undefined;
   MainTabs: undefined;
-  ChatDetail: { conversationId: string; userId?: string };
+  ChatDetail: {
+    /** chatId = `${uidA}_${uidB}` (đã sắp xếp) */
+    conversationId: string;
+    /** uid của người đang chat cùng */
+    userId: string;
+  };
 };
 
 export type MainTabParamList = {

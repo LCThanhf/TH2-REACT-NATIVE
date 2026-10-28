@@ -8,22 +8,44 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+
 import { useApp } from '../context/AppContext';
+import { RootStackParamList } from '../types';
+import { isFirebaseConfigured } from '../services/firebaseConfig';
+
+type LoginNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export const LoginScreen: React.FC = () => {
+  const navigation = useNavigation<LoginNavigationProp>();
   const { login } = useApp();
-  const [username, setUsername] = useState<string>('');
+  const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
+    if (isSubmitting) {
+      return;
+    }
+
     setErrorMessage('');
-    const result = login(username, password);
-    if (!result.success && result.error) {
-      setErrorMessage(result.error);
+    setIsSubmitting(true);
+
+    try {
+      const result = await login(email, password);
+      if (!result.success) {
+        setErrorMessage(result.error || 'Đăng nhập thất bại.');
+      }
+    } catch {
+      setErrorMessage('Không thể đăng nhập. Vui lòng thử lại.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -50,6 +72,15 @@ export const LoginScreen: React.FC = () => {
           <View style={styles.formCard}>
             <Text style={styles.formTitle}>Đăng nhập tài khoản</Text>
 
+            {!isFirebaseConfigured && (
+              <View style={styles.configBox}>
+                <Text style={styles.configText}>
+                  Chưa cấu hình Firebase. Hãy điền thông tin project vào{' '}
+                  src/services/firebaseConfig.ts
+                </Text>
+              </View>
+            )}
+
             {/* Error Message */}
             {errorMessage ? (
               <View style={styles.errorBox}>
@@ -57,23 +88,25 @@ export const LoginScreen: React.FC = () => {
               </View>
             ) : null}
 
-            {/* Username Input */}
+            {/* Email Input */}
             <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Tài khoản / Email</Text>
+              <Text style={styles.inputLabel}>Email</Text>
               <TextInput
                 style={[
                   styles.input,
-                  errorMessage && !username.trim() && styles.inputErrorBorder,
+                  errorMessage && !email.trim() && styles.inputErrorBorder,
                 ]}
-                placeholder="Nhập tên đăng nhập hoặc email"
+                placeholder="Nhập email của bạn"
                 placeholderTextColor="#94a3b8"
-                value={username}
+                value={email}
                 onChangeText={(text) => {
-                  setUsername(text);
+                  setEmail(text);
                   if (errorMessage) setErrorMessage('');
                 }}
                 autoCapitalize="none"
                 autoCorrect={false}
+                keyboardType="email-address"
+                editable={!isSubmitting}
               />
             </View>
 
@@ -90,7 +123,7 @@ export const LoginScreen: React.FC = () => {
               <TextInput
                 style={[
                   styles.input,
-                  errorMessage && !password.trim() && styles.inputErrorBorder,
+                  errorMessage && !password && styles.inputErrorBorder,
                 ]}
                 placeholder="Nhập mật khẩu"
                 placeholderTextColor="#94a3b8"
@@ -101,17 +134,38 @@ export const LoginScreen: React.FC = () => {
                 }}
                 secureTextEntry={!showPassword}
                 autoCapitalize="none"
+                editable={!isSubmitting}
+                onSubmitEditing={handleLogin}
               />
             </View>
 
             {/* Login Button */}
             <TouchableOpacity
-              style={styles.loginButton}
+              style={[
+                styles.loginButton,
+                isSubmitting && styles.loginButtonDisabled,
+              ]}
               activeOpacity={0.8}
               onPress={handleLogin}
+              disabled={isSubmitting}
             >
-              <Text style={styles.loginButtonText}>Đăng nhập</Text>
+              {isSubmitting ? (
+                <ActivityIndicator color="#ffffff" size="small" />
+              ) : (
+                <Text style={styles.loginButtonText}>Đăng nhập</Text>
+              )}
             </TouchableOpacity>
+
+            {/* Register Link */}
+            <View style={styles.registerRow}>
+              <Text style={styles.registerHint}>Chưa có tài khoản?</Text>
+              <TouchableOpacity
+                onPress={() => navigation.navigate('Register')}
+                disabled={isSubmitting}
+              >
+                <Text style={styles.registerLink}>Đăng ký ngay</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -186,6 +240,20 @@ const styles = StyleSheet.create({
     color: '#1e293b',
     marginBottom: 20,
   },
+  configBox: {
+    backgroundColor: '#fffbeb',
+    borderWidth: 1,
+    borderColor: '#fde68a',
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 16,
+  },
+  configText: {
+    color: '#b45309',
+    fontSize: 12.5,
+    lineHeight: 18,
+    fontWeight: '500',
+  },
   errorBox: {
     backgroundColor: '#fef2f2',
     borderWidth: 1,
@@ -245,9 +313,30 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 3,
   },
+  loginButtonDisabled: {
+    backgroundColor: '#7cb9f5',
+    shadowOpacity: 0,
+    elevation: 0,
+  },
   loginButtonText: {
     color: '#ffffff',
     fontSize: 16,
+    fontWeight: '600',
+  },
+  registerRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 20,
+    gap: 5,
+  },
+  registerHint: {
+    fontSize: 13.5,
+    color: '#64748b',
+  },
+  registerLink: {
+    fontSize: 13.5,
+    color: '#0084ff',
     fontWeight: '600',
   },
 });
